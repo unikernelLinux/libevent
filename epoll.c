@@ -83,6 +83,11 @@
 #define USING_TIMERFD
 #endif
 
+extern int ukl_epoll_create1(int flags);
+extern int ukl_epoll_create(int size);
+extern int ukl_epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+extern int ukl_epoll_ctl(int epfd, int op, int fd, struct epoll_event* event);
+
 struct epollop {
 	struct epoll_event *events;
 	int nevents;
@@ -145,14 +150,14 @@ epoll_init(struct event_base *base)
 
 #ifdef EVENT__HAVE_EPOLL_CREATE1
 	/* First, try the shiny new epoll_create1 interface, if we have it. */
-	epfd = epoll_create1(EPOLL_CLOEXEC);
+	epfd = ukl_epoll_create1(EPOLL_CLOEXEC);
 #endif
 	if (epfd == -1) {
 		/* Initialize the kernel queue using the old interface.  (The
 		size field is ignored   since 2.6.8.) */
-		if ((epfd = epoll_create(32000)) == -1) {
+		if ((epfd = ukl_epoll_create(32000)) == -1) {
 			if (errno != ENOSYS)
-				event_warn("epoll_create");
+				event_warn("ukl_epoll_create");
 			return (NULL);
 		}
 		evutil_make_socket_closeonexec(epfd);
@@ -198,8 +203,8 @@ epoll_init(struct event_base *base)
 			memset(&epev, 0, sizeof(epev));
 			epev.data.fd = epollop->timerfd;
 			epev.events = EPOLLIN;
-			if (epoll_ctl(epollop->epfd, EPOLL_CTL_ADD, fd, &epev) < 0) {
-				event_warn("epoll_ctl(timerfd)");
+			if (ukl_epoll_ctl(epollop->epfd, EPOLL_CTL_ADD, fd, &epev) < 0) {
+				event_warn("ukl_epoll_ctl(timerfd)");
 				close(fd);
 				epollop->timerfd = -1;
 			}
@@ -288,7 +293,7 @@ epoll_apply_one_change(struct event_base *base,
 	memset(&epev, 0, sizeof(epev));
 	epev.data.fd = ch->fd;
 	epev.events = events;
-	if (epoll_ctl(epollop->epfd, op, ch->fd, &epev) == 0) {
+	if (ukl_epoll_ctl(epollop->epfd, op, ch->fd, &epev) == 0) {
 		event_debug((PRINT_CHANGES(op, epev.events, ch, "okay")));
 		return 0;
 	}
@@ -300,7 +305,7 @@ epoll_apply_one_change(struct event_base *base,
 			 * fd was probably closed and re-opened.  We
 			 * should retry the operation as an ADD.
 			 */
-			if (epoll_ctl(epollop->epfd, EPOLL_CTL_ADD, ch->fd, &epev) == -1) {
+			if (ukl_epoll_ctl(epollop->epfd, EPOLL_CTL_ADD, ch->fd, &epev) == -1) {
 				event_warn("Epoll MOD(%d) on %d retried as ADD; that failed too",
 				    (int)epev.events, ch->fd);
 				return -1;
@@ -321,7 +326,7 @@ epoll_apply_one_change(struct event_base *base,
 			 * same file into the same fd gives you the same epitem
 			 * rather than a fresh one.  For the second case,
 			 * we must retry with MOD. */
-			if (epoll_ctl(epollop->epfd, EPOLL_CTL_MOD, ch->fd, &epev) == -1) {
+			if (ukl_epoll_ctl(epollop->epfd, EPOLL_CTL_MOD, ch->fd, &epev) == -1) {
 				event_warn("Epoll ADD(%d) on %d retried as MOD; that failed too",
 				    (int)epev.events, ch->fd);
 				return -1;
@@ -463,20 +468,20 @@ epoll_dispatch(struct event_base *base, struct timeval *tv)
 
 	EVBASE_RELEASE_LOCK(base, th_base_lock);
 
-	res = epoll_wait(epollop->epfd, events, epollop->nevents, timeout);
+	res = ukl_epoll_wait(epollop->epfd, events, epollop->nevents, timeout);
 
 	EVBASE_ACQUIRE_LOCK(base, th_base_lock);
 
 	if (res == -1) {
 		if (errno != EINTR) {
-			event_warn("epoll_wait");
+			event_warn("ukl_epoll_wait");
 			return (-1);
 		}
 
 		return (0);
 	}
 
-	event_debug(("%s: epoll_wait reports %d", __func__, res));
+	event_debug(("%s: ukl_epoll_wait reports %d", __func__, res));
 	EVUTIL_ASSERT(res <= epollop->nevents);
 
 	for (i = 0; i < res; i++) {

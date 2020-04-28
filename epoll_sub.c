@@ -34,6 +34,12 @@
 #include <unistd.h>
 #include <errno.h>
 
+extern int ukl_epoll_create1(int flags);
+extern int ukl_epoll_create(int size);
+extern int ukl_epoll_ctl(int epfd, int op, int fd, struct epoll_event* event);
+extern int ukl_epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+int ukl_epoll_pwait(int epfd, struct epoll_event* events, int maxevents, int timeout, const sigset_t * sigmask, size_t sigsetsize);
+
 int
 epoll_create(int size)
 {
@@ -42,9 +48,11 @@ epoll_create(int size)
 		errno = EINVAL;
 		return -1;
 	}
-	return (syscall(__NR_epoll_create1, 0));
+	//return (syscall(__NR_epoll_create1, 0));
+	return ukl_epoll_create1(0);
 #else
-	return (syscall(__NR_epoll_create, size));
+	//return (syscall(__NR_epoll_create, size));
+	return ukl_epoll_create(size);
 #endif
 }
 
@@ -52,15 +60,18 @@ int
 epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
 
-	return (syscall(__NR_epoll_ctl, epfd, op, fd, event));
+	//return (syscall(__NR_epoll_ctl, epfd, op, fd, event));
+	return ukl_epoll_ctl(epfd, op, fd, event);
 }
 
 int
 epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
 #if !defined(__NR_epoll_wait) && defined(__NR_epoll_pwait)
-	return (syscall(__NR_epoll_pwait, epfd, events, maxevents, timeout, NULL, 0));
+	//return (syscall(__NR_epoll_pwait, epfd, events, maxevents, timeout, NULL, 0));
+	return ukl_epoll_pwait(epfd, events, maxevents, timeout, NULL, 0);
 #else
-	return (syscall(__NR_epoll_wait, epfd, events, maxevents, timeout));
+	//return (syscall(__NR_epoll_wait, epfd, events, maxevents, timeout));
+	return ukl_epoll_wait(epfd, events, maxevents, timeout);
 #endif
 }
