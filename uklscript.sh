@@ -61,5 +61,5 @@ ar cr ukllibevent.a buffer.o bufferevent.o bufferevent_filter.o bufferevent_pair
 ld -r -o UKLlibevent --unresolved-symbols=ignore-all --allow-multiple-definition --whole-archive ukllibevent.a --no-whole-archive 
 # ld -r -o libcheck --unresolved-symbols=ignore-all --allow-multiple-definition --whole-archive libevent.a libevent_core.a libevent_extra.a libevent_openssl.a libevent_pthreads.a --no-whole-archive [fedora@uklvm2 unikernel]$ 
 
-
+echo "DONE"
 

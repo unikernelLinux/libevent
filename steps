@@ -8,4 +8,4 @@ Steps to build UKLlibevent
 
 3. ./configure
 
-4. ./uklscript
+4. ./uklscript.sh
