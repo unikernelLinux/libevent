@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm -r UKLlibevent
+rm -r UKLlibevent ukllibevent.a
 
 rm -rf buffer.o bufferevent.o bufferevent_filter.o bufferevent_pair.o bufferevent_ratelim.o bufferevent_sock.o event.o evmap.o evthread.o evutil.o evutil_rand.o evutil_time.o watch.o listener.o log.o strlcpy.o select.o poll.o epoll.o signal.o evdns.o event_tagging.o evrpc.o http.o libevent_openssl_la-bufferevent_openssl.o evthread_pthread.o
 
