@@ -33,7 +33,6 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sysdep.h>
 
 int
 epoll_create(int size)
@@ -43,24 +42,25 @@ epoll_create(int size)
 		errno = EINVAL;
 		return -1;
 	}
-	return (INTERNAL_SYSCALL(epoll_create1, 0, 1, 0));
+	return (syscall(__NR_epoll_create1, 0));
 #else
-	return (INTERNAL_SYSCALL(epoll_create, 0, 1, size));
+	return (syscall(__NR_epoll_create, size));
 #endif
 }
 
 int
 epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
-	return (INTERNAL_SYSCALL(epoll_ctl, 0, 4, epfd, op, fd, event));
+
+	return (syscall(__NR_epoll_ctl, epfd, op, fd, event));
 }
 
 int
 epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
 #if !defined(__NR_epoll_wait) && defined(__NR_epoll_pwait)
-	return (INTERNAL_SYSCALL(epoll_pwait, 0, 6, epfd, events, maxevents, timeout, NULL, 0));
+	return (syscall(__NR_epoll_pwait, epfd, events, maxevents, timeout, NULL, 0));
 #else
-	return (INTERNAL_SYSCALL(epoll_wait, 0, 4, epfd, events, maxevents, timeout));
+	return (syscall(__NR_epoll_wait, epfd, events, maxevents, timeout));
 #endif
 }
